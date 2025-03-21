@@ -1,0 +1,15 @@
+{
+  "name": "react-node-mongo-base-app",
+  "version": "1.0.0",
+  "description": "A modern full-stack application scaffold built with React, Node.js, and MongoDB",
+  "scripts": {
+    "install:all": "npm install && cd client && npm install && cd ../server && npm install",
+    "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm run dev\"",
+    "build": "cd server && npm run build && cd ../client && npm run build",
+    "start": "cd server && npm start",
+    "test": "cd server && npm test && cd ../client && npm test"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+} 
