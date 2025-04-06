@@ -89,8 +89,8 @@ export default function HomePage() {
       </Card>
 
       {/* Form Demo - Using Material-UI components with Tailwind spacing */}
-      <Card className="p-6">
-        <Typography variant="h4" className="font-bold mb-4">
+      <Card className="p-6 bg-white dark:bg-gray-800">
+        <Typography variant="h4" className="font-bold mb-4 text-gray-900 dark:text-white">
           Form Demo
         </Typography>
         <Box component="form" className="space-y-4">
@@ -101,7 +101,47 @@ export default function HomePage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             variant="outlined"
-            className="!bg-white"
+            className="!bg-white dark:!bg-gray-700"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: 'rgb(209 213 219)',
+                },
+                '&:hover fieldset': {
+                  borderColor: 'rgb(156 163 175)',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#1976d2',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#1976d2',
+                },
+                '&.dark fieldset': {
+                  borderColor: 'rgb(75 85 99)',
+                },
+                '&.dark:hover fieldset': {
+                  borderColor: 'rgb(107 114 128)',
+                },
+                '&.dark.Mui-focused fieldset': {
+                  borderColor: '#1976d2',
+                },
+                '&.dark.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#1976d2',
+                },
+              },
+              '& .MuiInputLabel-root': {
+                color: 'rgb(75 85 99)',
+                '&.Mui-focused': {
+                  color: '#1976d2',
+                },
+                '&.dark': {
+                  color: 'rgb(156 163 175)',
+                },
+                '&.dark.Mui-focused': {
+                  color: '#1976d2',
+                },
+              },
+            }}
           />
           <TextField
             fullWidth
@@ -109,13 +149,53 @@ export default function HomePage() {
             multiline
             rows={4}
             variant="outlined"
-            className="!bg-white"
+            className="!bg-white dark:!bg-gray-700"
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: 'rgb(209 213 219)',
+                },
+                '&:hover fieldset': {
+                  borderColor: 'rgb(156 163 175)',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#1976d2',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#1976d2',
+                },
+                '&.dark fieldset': {
+                  borderColor: 'rgb(75 85 99)',
+                },
+                '&.dark:hover fieldset': {
+                  borderColor: 'rgb(107 114 128)',
+                },
+                '&.dark.Mui-focused fieldset': {
+                  borderColor: '#1976d2',
+                },
+                '&.dark.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#1976d2',
+                },
+              },
+              '& .MuiInputLabel-root': {
+                color: 'rgb(75 85 99)',
+                '&.Mui-focused': {
+                  color: '#1976d2',
+                },
+                '&.dark': {
+                  color: 'rgb(156 163 175)',
+                },
+                '&.dark.Mui-focused': {
+                  color: '#1976d2',
+                },
+              },
+            }}
           />
           <Button
             variant="contained"
             color="primary"
             type="submit"
-            className="!bg-primary-600 hover:!bg-primary-700"
+            className="!bg-primary-600 hover:!bg-primary-700 dark:!bg-primary-500 dark:hover:!bg-primary-600"
           >
             Submit
           </Button>

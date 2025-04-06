@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { User } from '../models/User';
 import { UserAuditLog } from '../models/UserAuditLog';
 import { Role } from '../models/Role';
@@ -12,7 +12,7 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 // Define JWT payload type
 interface JWTPayload {
-  userId: string;
+  id: string;
   roles: string[];
 }
 
@@ -85,11 +85,11 @@ export const register = async (req: Request, res: Response) => {
       }
 
       // Generate token
-      const payload: JWTPayload = { userId: user._id.toString(), roles: user.roles.map(r => r.toString()) };
+      const payload: JWTPayload = { id: user._id.toString(), roles: user.roles.map(r => r.toString()) };
       const token = jwt.sign(
         payload,
-        JWT_SECRET,
-        { expiresIn: JWT_EXPIRES_IN }
+        JWT_SECRET as jwt.Secret,
+        { expiresIn: JWT_EXPIRES_IN } as SignOptions
       );
 
       res.status(201).json({
@@ -119,53 +119,62 @@ export const register = async (req: Request, res: Response) => {
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-
-    // Check if user exists
-    const user = await User.findOne({ email });
+    
+    // Check if user exists and populate roles
+    const user = await User.findOne({ email })
+      .select('+password')
+      .populate('roles', 'name');
+    
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
-
-    // Check password
+    
+    // Check password match
     const isMatch = await user.comparePassword(password);
+    
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
-
-    // Update last login
-    user.lastLogin = new Date();
-    await user.save();
-
+    
     // Create audit log
-    await UserAuditLog.create({
-      userId: user._id,
-      action: 'login',
-      details: { email },
-      ipAddress: req.ip,
-      userAgent: req.get('user-agent'),
-    });
-
-    // Generate token
-    const payload: JWTPayload = { userId: user._id.toString(), roles: user.roles.map(r => r.toString()) };
+    try {
+      await UserAuditLog.create({
+        userId: user._id,
+        action: 'login',
+        details: { email },
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent'),
+      });
+    } catch (error) {
+      logger.error('Error creating login audit log:', error);
+      // Continue despite audit log error
+    }
+    
+    // Generate token with role names
+    const payload: JWTPayload = { 
+      id: user._id.toString(), 
+      roles: user.roles.map((role: any) => role.name)
+    };
     const token = jwt.sign(
       payload,
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN }
+      JWT_SECRET as jwt.Secret,
+      { expiresIn: JWT_EXPIRES_IN } as SignOptions
     );
-
-    res.json({
+    
+    // Transform user object to include role names
+    res.status(200).json({
       token,
       user: {
         id: user._id,
-        email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        roles: user.roles,
-      },
+        email: user.email,
+        roles: user.roles.map((role: any) => role.name)
+      }
     });
   } catch (error) {
     logger.error('Login error:', error);
-    res.status(500).json({ message: 'Error during login', error: error.message });
+    res.status(500).json({ message: 'Server error during login' });
   }
 };
 
@@ -218,5 +227,87 @@ export const resetPassword = async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Reset password error:', error);
     res.status(500).json({ message: 'Error resetting password' });
+  }
+};
+
+// Get current user
+export const getCurrentUser = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      console.log('No user found in request');
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    console.log('Getting current user data for:', req.user._id);
+    
+    const user = await User.findById(req.user._id)
+      .select('-password')
+      .populate('roles', 'name');
+
+    console.log('User data from database:', user);
+
+    if (!user) {
+      console.log('User not found in database');
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Transform the response to use role names instead of IDs
+    const transformedUser = {
+      id: user._id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      roles: user.roles.map((role: any) => role.name)
+    };
+
+    console.log('Transformed user data:', transformedUser);
+    res.json(transformedUser);
+  } catch (error) {
+    console.error('Error in getCurrentUser:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const refreshToken = async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'No token provided' });
+    }
+    
+    const token = authHeader.split(' ')[1];
+    
+    try {
+      // Verify the existing token
+      const decoded = jwt.verify(token, JWT_SECRET as string) as { id: string };
+      
+      // Find user and populate roles
+      const user = await User.findById(decoded.id)
+        .populate('roles', 'name')
+        .lean();
+      
+      if (!user) {
+        return res.status(401).json({ message: 'User not found' });
+      }
+
+      // Generate new token
+      const payload: JWTPayload = { 
+        id: user._id.toString(), 
+        roles: user.roles.map((role: any) => role.name)
+      };
+      const newToken = jwt.sign(
+        payload,
+        JWT_SECRET as jwt.Secret,
+        { expiresIn: JWT_EXPIRES_IN } as SignOptions
+      );
+      
+      res.json({ token: newToken });
+    } catch (jwtError) {
+      return res.status(401).json({ message: 'Invalid or expired token' });
+    }
+  } catch (error) {
+    logger.error('Token refresh error:', error);
+    res.status(500).json({ message: 'Error refreshing token' });
   }
 }; 

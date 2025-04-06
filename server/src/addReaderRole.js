@@ -38,7 +38,7 @@ async function addReaderRole() {
   try {
     // Connect to MongoDB
     await mongoose.connect(MONGODB_URI);
-    console.log('Connected to MongoDB');
+    // console.log('Connected to MongoDB');
 
     // List existing roles
     const roles = await Role.find({});

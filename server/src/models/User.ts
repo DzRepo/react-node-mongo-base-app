@@ -8,6 +8,16 @@ export interface IUser extends Document {
   lastName: string;
   isEmailVerified: boolean;
   roles: string[];
+  bio?: string;
+  interests?: string[];
+  profilePicture?: string;
+  socialLinks?: {
+    website?: string;
+    github?: string;
+    twitter?: string;
+    linkedin?: string;
+  };
+  themePreference?: 'light' | 'dark' | 'system';
   socialAuth?: {
     provider: string; // 'google', 'github', etc.
     providerId: string;
@@ -50,17 +60,55 @@ const userSchema = new Schema<IUser>(
       default: false,
     },
     roles: [{
-      type: String,
+      type: Schema.Types.ObjectId,
       ref: 'Role',
       required: true,
     }],
-    socialAuth: {
-      provider: String,
-      providerId: String,
-      accessToken: String,
-      refreshToken: String,
+    bio: {
+      type: String,
     },
-    lastLogin: Date,
+    interests: [{
+      type: String,
+    }],
+    profilePicture: {
+      type: String,
+    },
+    socialLinks: {
+      website: {
+        type: String,
+      },
+      github: {
+        type: String,
+      },
+      twitter: {
+        type: String,
+      },
+      linkedin: {
+        type: String,
+      }
+    },
+    themePreference: {
+      type: String,
+      enum: ['light', 'dark', 'system'],
+      default: 'system',
+    },
+    socialAuth: {
+      provider: {
+        type: String,
+      },
+      providerId: {
+        type: String,
+      },
+      accessToken: {
+        type: String,
+      },
+      refreshToken: {
+        type: String,
+      }
+    },
+    lastLogin: {
+      type: Date,
+    },
   },
   {
     timestamps: true,
@@ -77,8 +125,8 @@ userSchema.pre('save', async function(next) {
       this.password = await bcrypt.hash(this.password, salt);
     }
     next();
-  } catch (error) {
-    next(error as Error);
+  } catch (error: any) {
+    next(error);
   }
 });
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
@@ -17,6 +17,7 @@ const validationSchema = Yup.object({
 const Login: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoading, setIsLoading] = React.useState(false);
   const [loginError, setLoginError] = React.useState<string | null>(null);
 
@@ -24,8 +25,29 @@ const Login: React.FC = () => {
     try {
       setIsLoading(true);
       setLoginError(null);
+      
+      console.log('Attempting login...');
       await login(values.email, values.password);
-      navigate('/members');
+      
+      // Get redirect location with priority order:
+      // 1. From location state if coming from a protected route
+      // 2. From localStorage if redirected from API call
+      // 3. Default to members page 
+      const fromState = location.state && (location.state as any).from;
+      const fromStorage = localStorage.getItem('redirectAfterLogin');
+      
+      let redirectPath = '/members';
+      
+      if (fromState) {
+        console.log('Redirecting to location state path:', fromState);
+        redirectPath = fromState;
+      } else if (fromStorage) {
+        console.log('Redirecting to stored path:', fromStorage);
+        localStorage.removeItem('redirectAfterLogin');
+        redirectPath = fromStorage;
+      }
+      
+      navigate(redirectPath);
     } catch (error) {
       console.error('Login error:', error);
       if (axios.isAxiosError(error)) {

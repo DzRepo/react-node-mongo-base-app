@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { Link } from 'react-router-dom';
 
 const Members: React.FC = () => {
   const { user } = useAuth();
@@ -16,6 +17,33 @@ const Members: React.FC = () => {
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Discussion Forum Card */}
+            <Link 
+              to="/discussions" 
+              className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow duration-200"
+            >
+              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white mb-4">
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Discussion Forum</h3>
+              <p className="text-gray-500 dark:text-gray-400">
+                Join conversations, share ideas, and connect with the community.
+              </p>
+            </Link>
+
             {/* Dashboard Card */}
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 shadow-sm">
               <div className="flex items-center justify-center h-12 w-12 rounded-md bg-primary-500 text-white mb-4">

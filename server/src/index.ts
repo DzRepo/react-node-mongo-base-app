@@ -5,6 +5,11 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import setupDatabase from './setupDatabase';
 import authRoutes from './routes/auth.routes';
+import discussionRoutes from './routes/discussion.routes';
+import userRoutes from './routes/user.routes';
+import reportRoutes from './routes/report.routes';
+import debugAuthRoutes from './routes/debug-auth';
+import { optionalAuth } from './middleware/auth';
 import logger from './utils/logger';
 
 // Load environment variables
@@ -14,23 +19,41 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  credentials: true
+}));
 app.use(express.json());
 app.use(morgan('dev'));
 
+// Apply optional authentication to all routes
+// This will attach the user to the request if a valid token is provided
+// but will still allow requests without authentication
+app.use((req, res, next) => {
+  logger.info(`Incoming request to: ${req.method} ${req.path}`);
+  logger.info(`Authorization header: ${req.headers.authorization ? 'Present' : 'Not present'}`);
+  next();
+});
+
+app.use(optionalAuth);
+
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/auth', debugAuthRoutes);
+app.use('/api', discussionRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Database connection
 const connectToDatabase = async () => {
   try {
     // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://admin:password@localhost:27017/datastore?authSource=admin&retryWrites=true&w=majority');
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://datastoreReadWrite:goldfish@localhost:27017/datastore?authSource=admin&retryWrites=true&w=majority');
     logger.info('Connected to MongoDB');
 
     // Ensure default data exists (don't connect or disconnect since we're already connected)
     await setupDatabase();
-    logger.info('Database setup completed');
+    // logger.info('Database setup completed');
 
     // Start server after database is ready
     app.listen(PORT, () => {
